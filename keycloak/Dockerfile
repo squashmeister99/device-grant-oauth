@@ -1,7 +1,7 @@
-FROM keycloak:23.0.0
+FROM quay.io/keycloak/keycloak:23.0.0
 
 # Copy realm configuration for auto-import
-COPY realm-export.json /opt/keycloak/data/realm-export.json
+COPY realm-export.json /opt/keycloak/data/import/realm-export.json
 
 # Set up logging
 ENV QUARKUS_LOGGING_LEVEL=INFO

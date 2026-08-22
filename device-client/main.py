@@ -8,8 +8,10 @@ import sys
 import time
 import json
 import jwt
+import threading
 from datetime import datetime
 from typing import Optional
+import uvicorn
 
 from app.config import get_config, setup_logging
 from app.device_flow import DeviceFlowClient, AccessDeniedException, TokenExpiredException, PollingTimeoutException
@@ -32,6 +34,23 @@ class DeviceAuthClient:
         self.token_store = TokenStore(self.config)
         self.display = Display()
         self.web_ui = create_web_ui(self.config, self.device_flow, self.display)
+        self._web_ui_thread: Optional[threading.Thread] = None
+
+    def _start_web_ui(self) -> None:
+        """Start the web UI in a background daemon thread."""
+        if self._web_ui_thread and self._web_ui_thread.is_alive():
+            return
+
+        def _run_server() -> None:
+            uvicorn.run(
+                self.web_ui.app,
+                host=self.config.web_ui_host,
+                port=self.config.web_ui_port,
+                log_level="warning"
+            )
+
+        self._web_ui_thread = threading.Thread(target=_run_server, daemon=True)
+        self._web_ui_thread.start()
     
     def login(self) -> bool:
         """
@@ -46,6 +65,9 @@ class DeviceAuthClient:
         print("="*60 + "\n")
         
         try:
+            # Start browser UI for QR display/status while polling in terminal
+            self._start_web_ui()
+
             # Step 1: Request device code
             logger.info("Step 1: Requesting device code from authorization server")
             device_code_response = self.device_flow.request_device_code()
@@ -92,7 +114,13 @@ class DeviceAuthClient:
                 )
                 username = decoded.get('preferred_username', 'unknown')
                 scopes = decoded.get('scope', 'unknown')
-                self.display.print_success_summary(username, scopes, token_response.expires_in)
+                self.display.print_success_summary(
+                    username,
+                    scopes,
+                    token_response.expires_in,
+                    access_token=token_response.access_token,
+                    refresh_token=token_response.refresh_token
+                )
             except Exception as e:
                 logger.warning(f"Failed to extract token info: {e}")
             
@@ -140,7 +168,9 @@ class DeviceAuthClient:
             self.display.print_success_summary(
                 username="(refreshed)",
                 scopes="openid profile email offline_access",
-                expires_in=new_tokens['expires_in']
+                expires_in=new_tokens['expires_in'],
+                access_token=new_tokens.get('access_token'),
+                refresh_token=new_tokens.get('refresh_token')
             )
             
             # Display token claims

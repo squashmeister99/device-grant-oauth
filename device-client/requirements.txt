@@ -14,7 +14,7 @@ qrcode==8.0
 Pillow==10.2.0
 
 # Cryptography and JWT
-PyJWT==2.8.1
+PyJWT==2.13.0
 cryptography==42.0.5
 
 # Utilities

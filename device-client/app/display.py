@@ -215,7 +215,13 @@ class Display:
         print("!"*60 + "\n")
     
     @staticmethod
-    def print_success_summary(username: str, scopes: str, expires_in: int) -> None:
+    def print_success_summary(
+        username: str,
+        scopes: str,
+        expires_in: int,
+        access_token: Optional[str] = None,
+        refresh_token: Optional[str] = None
+    ) -> None:
         """
         Print a success summary with key information.
         
@@ -223,6 +229,8 @@ class Display:
             username: The authenticated username.
             scopes: Authorized scopes.
             expires_in: Token lifetime in seconds.
+            access_token: Access token value (masked when displayed).
+            refresh_token: Refresh token value (masked when displayed).
         """
         expires_dt = datetime.fromtimestamp(datetime.now().timestamp() + expires_in)
         print("\n" + "="*60)
@@ -232,4 +240,15 @@ class Display:
         print(f"  Scopes: {scopes}")
         print(f"  Token expires: {expires_dt.isoformat()}")
         print(f"  (~{expires_in} seconds)")
+        if access_token:
+            print(f"  Access token (masked): {Display._mask_token(access_token)}")
+        if refresh_token:
+            print(f"  Refresh token (masked): {Display._mask_token(refresh_token)}")
         print("="*60 + "\n")
+
+    @staticmethod
+    def _mask_token(token: str) -> str:
+        """Mask token value for safe terminal display."""
+        if len(token) <= 12:
+            return f"{token[0:2]}...{token[-2:]}"
+        return f"{token[0:6]}...{token[-6:]}"

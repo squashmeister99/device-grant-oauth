@@ -7,7 +7,7 @@ import logging
 import time
 import requests
 from typing import Dict, Optional, Tuple
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
@@ -22,14 +22,11 @@ class DeviceCodeResponse:
     verification_uri_complete: str
     expires_in: int
     interval: int
+    created_at: float = field(default_factory=time.time)
     
     def is_expired(self) -> bool:
         """Check if the device code has expired."""
         return time.time() > (self.created_at + self.expires_in)
-    
-    def created_at(self) -> float:
-        """Timestamp when this code was created."""
-        return time.time()
 
 
 @dataclass
@@ -93,7 +90,7 @@ class DeviceFlowClient:
                 self.config.device_auth_endpoint,
                 data={
                     'client_id': self.config.keycloak_client_id,
-                    'scope': 'openid profile email offline_access'
+                    'scope': self.config.keycloak_scopes
                 },
                 timeout=10
             )
@@ -184,6 +181,11 @@ class DeviceFlowClient:
                     logger.debug(f"Token response: token_type={data['token_type']}, "
                                f"expires_in={data['expires_in']}, "
                                f"scope={data.get('scope', 'N/A')}")
+                    logger.info(
+                        "Token metadata: access_token=%s refresh_token=%s",
+                        self._mask_token(data.get('access_token')),
+                        self._mask_token(data.get('refresh_token'))
+                    )
                     
                     return TokenResponse(
                         access_token=data['access_token'],
@@ -239,3 +241,12 @@ class DeviceFlowClient:
         
         logger.error(f"Max retries ({max_retries}) exceeded")
         raise PollingTimeoutException(f"Max retries ({max_retries}) exceeded")
+
+    @staticmethod
+    def _mask_token(token: Optional[str]) -> str:
+        """Return a masked token string safe for logs."""
+        if not token:
+            return "<none>"
+        if len(token) <= 12:
+            return f"{token[0:2]}...{token[-2:]}"
+        return f"{token[0:6]}...{token[-6:]}"

@@ -20,6 +20,7 @@ class TestConfigDefaults:
             assert config.keycloak_realm == "device-grant-demo"
             assert config.keycloak_client_id == "device-client"
             assert config.keycloak_url == "http://keycloak:8080"
+            assert config.keycloak_scopes == "openid profile email"
             assert config.device_code_lifetime == 600
             assert config.poll_timeout == 30
             assert config.polling_interval_min == 2
@@ -39,6 +40,7 @@ class TestConfigEnvVars:
             'KEYCLOAK_REALM': 'custom-realm',
             'KEYCLOAK_CLIENT_ID': 'custom-client',
             'KEYCLOAK_URL': 'https://auth.example.com',
+            'KEYCLOAK_SCOPES': 'openid profile email offline_access',
             'DEVICE_CODE_LIFETIME': '1200',
             'POLL_TIMEOUT': '60',
             'POLLING_INTERVAL_MIN': '5',
@@ -55,6 +57,7 @@ class TestConfigEnvVars:
             assert config.keycloak_realm == 'custom-realm'
             assert config.keycloak_client_id == 'custom-client'
             assert config.keycloak_url == 'https://auth.example.com'
+            assert config.keycloak_scopes == 'openid profile email offline_access'
             assert config.device_code_lifetime == 1200
             assert config.poll_timeout == 60
             assert config.polling_interval_min == 5

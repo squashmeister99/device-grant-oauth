@@ -69,6 +69,41 @@ make login
 
 **That's it!** You'll see a QR code in the console and a web UI at `http://localhost:8000`.
 
+### 🪟 Windows Users (No `make` Command)
+
+Run these PowerShell commands directly instead:
+
+```powershell
+# Start all services
+docker-compose up -d
+
+# Run device authorization flow
+docker-compose exec device-client python main.py login
+
+# Refresh token
+docker-compose exec device-client python main.py refresh
+
+# Logout
+docker-compose exec device-client python main.py logout
+
+# Run tests
+docker-compose exec device-client pytest -v
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose stop
+
+# Reset everything
+docker-compose down -v
+
+# Rebuild images
+docker-compose build --no-cache
+```
+
+See [Available Commands](#-available-commands) section below for all options.
+
 ## 🔄 How It Works
 
 ### Architecture
@@ -183,13 +218,11 @@ device-grant-oauth/
 
 ## 📦 Available Commands
 
-### Development Commands
-
-Use `make help` to list all available commands:
+### Option A: Using Make (Linux/macOS)
 
 ```bash
-make start      # docker-compose up -d (start all services)
-make stop       # docker-compose stop (stop without removing)
+make start      # Start all services
+make stop       # Stop services (keep volumes)
 make login      # Run device authorization flow
 make refresh    # Refresh access token
 make logout     # Revoke tokens and clean up
@@ -197,10 +230,27 @@ make reset      # Stop and remove all containers and volumes
 make test       # Run pytest suite
 make logs       # Tail docker-compose logs
 make rebuild    # Rebuild Docker images (no cache)
+make help       # Show all available commands
+```
+
+### Option B: Direct Docker Commands (Windows/No Make)
+
+```powershell
+docker-compose up -d                              # Start all services
+docker-compose stop                               # Stop services
+docker-compose exec device-client python main.py login      # Login
+docker-compose exec device-client python main.py refresh    # Refresh
+docker-compose exec device-client python main.py logout     # Logout
+docker-compose exec device-client python main.py status     # Check status
+docker-compose exec device-client pytest -v      # Run tests
+docker-compose logs -f                            # View logs
+docker-compose down -v                            # Reset everything
+docker-compose build --no-cache                   # Rebuild images
 ```
 
 ### Example Workflow
 
+**Using Make:**
 ```bash
 # Terminal 1: Start services
 make start
@@ -210,10 +260,6 @@ make start
 make login
 # Scan QR code or open http://localhost:8000 to see status
 
-# User authenticates in browser
-# Device polls and receives tokens
-# Claims are displayed in terminal
-
 # Later: Refresh token
 make refresh
 
@@ -222,6 +268,25 @@ make logout
 
 # Cleanup everything
 make reset
+```
+
+**Using PowerShell (Windows):**
+```powershell
+# Terminal 1: Start services
+docker-compose up -d
+
+# Terminal 2: Run device flow
+docker-compose exec device-client python main.py login
+# Scan QR code or open http://localhost:8000 to see status
+
+# Later: Refresh token
+docker-compose exec device-client python main.py refresh
+
+# Later: Logout
+docker-compose exec device-client python main.py logout
+
+# Cleanup everything
+docker-compose down -v
 ```
 
 ## 🔐 Step-by-Step Walkthrough
@@ -571,6 +636,7 @@ All configuration is via environment variables. Create `.env` file or pass to `d
 KEYCLOAK_REALM=device-grant-demo
 KEYCLOAK_CLIENT_ID=device-client
 KEYCLOAK_URL=http://keycloak:8080
+KEYCLOAK_SCOPES=openid profile email      # Add offline_access only if your realm/client allows it
 KEYCLOAK_ADMIN=admin
 KEYCLOAK_ADMIN_PASSWORD=change-me
 
@@ -737,6 +803,27 @@ make login
 # Run login command again to get fresh device code
 make login
 ```
+
+### "Token error: not_allowed"
+
+**Symptom:**
+```
+[ERROR] Token error: not_allowed
+```
+
+**Cause:** Requested scopes are not permitted for the current user/client (commonly `offline_access`).
+
+**Solution:**
+```bash
+# In .env, request base scopes first
+KEYCLOAK_SCOPES=openid profile email
+
+# Restart and run a fresh flow
+docker-compose up -d --build
+docker-compose exec device-client python main.py login
+```
+
+If you need offline tokens, re-enable `offline_access` only after confirming the realm/client user permissions allow it.
 
 **Or increase device code lifetime:**
 ```bash

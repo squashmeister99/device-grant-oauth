@@ -26,6 +26,7 @@ def mock_config():
     config.keycloak_realm = 'test-realm'
     config.keycloak_client_id = 'test-client'
     config.keycloak_url = 'http://localhost:8080'
+    config.keycloak_scopes = 'openid profile email'
     config.device_code_lifetime = 600
     config.poll_timeout = 30
     config.polling_interval_min = 2
@@ -66,7 +67,7 @@ def token_response():
         'token_type': 'Bearer',
         'expires_in': 3600,
         'refresh_token': 'test-refresh-token-xyz789',
-        'scope': 'openid profile email offline_access'
+        'scope': 'openid profile email'
     }
 
 

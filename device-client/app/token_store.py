@@ -65,6 +65,11 @@ class TokenStore:
                 json.dump(token_data, f, indent=2)
             
             logger.info(f"Tokens saved to {self.storage_path}")
+            logger.info(
+                "Saved token metadata: access_token=%s refresh_token=%s",
+                self._mask_token(access_token),
+                self._mask_token(refresh_token)
+            )
             logger.debug(f"Token expiry: {datetime.fromtimestamp(expires_at).isoformat()}")
             
         except IOError as e:
@@ -119,10 +124,15 @@ class TokenStore:
             True if token is expired or doesn't exist, False otherwise.
         """
         try:
-            token_data = self.load_tokens()
+            if not self.storage_path.exists():
+                return True
+
+            with open(self.storage_path, 'r') as f:
+                token_data = json.load(f)
+
             expires_at = token_data.get('expires_at', 0)
             return time.time() > (expires_at - expiry_buffer)
-        except TokenStoreError:
+        except (IOError, json.JSONDecodeError, TypeError, ValueError):
             return True
     
     def get_token_info(self) -> Dict[str, Any]:
@@ -179,6 +189,7 @@ class TokenStore:
             raise NoTokenError("No refresh token available")
         
         logger.info("Attempting to refresh access token")
+        logger.debug("Using refresh token: %s", self._mask_token(refresh_token))
         
         try:
             response = requests.post(
@@ -194,6 +205,11 @@ class TokenStore:
             
             data = response.json()
             logger.info("Access token refreshed successfully")
+            logger.info(
+                "Refreshed token metadata: access_token=%s refresh_token=%s",
+                self._mask_token(data.get('access_token')),
+                self._mask_token(data.get('refresh_token', refresh_token))
+            )
             logger.debug(f"New token expires in {data['expires_in']}s")
             
             # Handle refresh token rotation
@@ -241,6 +257,11 @@ class TokenStore:
         refresh_token = token_data.get('refresh_token')
         
         logger.info("Revoking tokens")
+        logger.info(
+            "Revocation targets: access_token=%s refresh_token=%s",
+            self._mask_token(access_token),
+            self._mask_token(refresh_token)
+        )
         
         revocation_failures = []
         
@@ -317,3 +338,12 @@ class TokenStore:
             parts.append(f"{minutes}m")
         parts.append(f"{secs}s")
         return " ".join(parts)
+
+    @staticmethod
+    def _mask_token(token: Optional[str]) -> str:
+        """Return a masked token string safe for logs."""
+        if not token:
+            return "<none>"
+        if len(token) <= 12:
+            return f"{token[0:2]}...{token[-2:]}"
+        return f"{token[0:6]}...{token[-6:]}"

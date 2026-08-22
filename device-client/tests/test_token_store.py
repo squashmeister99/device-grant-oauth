@@ -6,6 +6,7 @@ Tests token persistence, refresh, and revocation.
 import pytest
 import json
 import time
+import requests
 from pathlib import Path
 from unittest.mock import Mock, patch
 from app.token_store import (
@@ -248,7 +249,7 @@ class TestTokenRefresh:
             expires_in=3600
         )
         
-        mock_post.side_effect = Exception("Network error")
+        mock_post.side_effect = requests.RequestException("Network error")
         
         with pytest.raises(TokenStoreError):
             store.refresh_tokens()

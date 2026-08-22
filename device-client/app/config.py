@@ -15,6 +15,7 @@ class Config(BaseSettings):
     keycloak_realm: str = Field(default="device-grant-demo", alias="KEYCLOAK_REALM")
     keycloak_client_id: str = Field(default="device-client", alias="KEYCLOAK_CLIENT_ID")
     keycloak_url: str = Field(default="http://keycloak:8080", alias="KEYCLOAK_URL")
+    keycloak_scopes: str = Field(default="openid profile email", alias="KEYCLOAK_SCOPES")
     
     # Device flow configuration
     device_code_lifetime: int = Field(default=600, alias="DEVICE_CODE_LIFETIME")

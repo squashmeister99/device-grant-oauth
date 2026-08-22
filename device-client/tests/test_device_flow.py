@@ -6,6 +6,7 @@ Tests the polling state machine and device code request.
 import pytest
 import time
 from unittest.mock import Mock, patch, MagicMock
+import requests
 from app.device_flow import (
     DeviceFlowClient, DeviceCodeResponse, TokenResponse,
     AccessDeniedException, TokenExpiredException, PollingTimeoutException,
@@ -36,7 +37,7 @@ class TestDeviceCodeRequest:
     @patch('app.device_flow.requests.post')
     def test_request_device_code_network_error(self, mock_post, mock_config):
         """Test device code request with network error."""
-        mock_post.side_effect = Exception("Network error")
+        mock_post.side_effect = requests.RequestException("Network error")
         
         client = DeviceFlowClient(mock_config)
         with pytest.raises(DeviceAuthorizationError):
@@ -156,7 +157,7 @@ class TestPollingStateMachine:
                          device_code_response, error_response_pending):
         """Test polling timeout after exceeding max time."""
         # Mock time to simulate timeout
-        mock_time.side_effect = [0, 1, 31]  # Start=0, after first poll=1, after second=31s (exceeds 30s timeout)
+        mock_time.side_effect = [0, 1, 2, 31, 31, 31]  # Extra values cover logging's internal time.time() calls
         
         mock_response = Mock()
         mock_response.status_code = 400
@@ -164,7 +165,7 @@ class TestPollingStateMachine:
         mock_post.return_value = mock_response
         
         client = DeviceFlowClient(mock_config)
-        client.device_code_response = DeviceCodeResponse(**device_code_response)
+        client.device_code_response = DeviceCodeResponse(**device_code_response, created_at=0)
         client.created_timestamp = 0
         
         with pytest.raises(PollingTimeoutException):
