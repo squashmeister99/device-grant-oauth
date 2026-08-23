@@ -342,7 +342,7 @@ class WebUI:
                         <div class="code-section">
                             <p>Or enter this code:</p>
                             <div class="user-code">${formatted}</div>
-                            <p style="font-size: 12px; color: #999;">Visit: ${status.verification_uri}</p>
+                            <p style="font-size: 12px; color: #999;">Visit: <a href="${status.verification_uri}" target="_blank" rel="noopener noreferrer">${status.verification_uri}</a></p>
                         </div>
                         <div class="countdown">Expires in ${minutes}m ${seconds}s</div>`;
                 }
