@@ -53,39 +53,8 @@
       - "start"
       - "--import-realm"
 
-  device-client:
-    build:
-      context: ./device-client
-      dockerfile: Dockerfile
-    container_name: device-grant-client
-    environment:
-      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-device-grant-demo}
-      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-device-client}
-      KEYCLOAK_URL: ${KEYCLOAK_URL:-http://keycloak:8080}
-      DEVICE_CODE_LIFETIME: ${DEVICE_CODE_LIFETIME:-600}
-      POLL_TIMEOUT: ${POLL_TIMEOUT:-300}
-      POLLING_INTERVAL_MIN: ${POLLING_INTERVAL_MIN:-2}
-      POLLING_INTERVAL_MAX: ${POLLING_INTERVAL_MAX:-120}
-      TOKEN_STORAGE_PATH: ${TOKEN_STORAGE_PATH:-/data/tokens.json}
-      WEB_UI_PORT: ${WEB_UI_PORT:-8000}
-      WEB_UI_HOST: ${WEB_UI_HOST:-0.0.0.0}
-      LOG_LEVEL: ${LOG_LEVEL:-INFO}
-    ports:
-      - "8000:8000"
-    depends_on:
-      keycloak:
-        condition: service_healthy
-    volumes:
-      - device-data:/data
-    networks:
-      - device-grant-network
-    stdin_open: true
-    tty: true
-    command: /bin/bash
-
 volumes:
   postgres_data:
-  device-data:
 
 networks:
   device-grant-network:

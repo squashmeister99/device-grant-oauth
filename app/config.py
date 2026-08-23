@@ -37,6 +37,9 @@ class Config(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = False
+        # .env is shared with docker-compose (Keycloak admin/public host vars);
+        # ignore those instead of failing validation.
+        extra = "ignore"
 
     @property
     def device_auth_endpoint(self) -> str:

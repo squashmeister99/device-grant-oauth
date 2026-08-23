@@ -37,8 +37,7 @@ wheels/
 .env.local
 
 # Project-specific
-device-client/data/
-native-client/data/
+data/
 tokens.json
 *.log
 .pytest_cache/
