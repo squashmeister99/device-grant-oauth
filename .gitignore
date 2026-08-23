@@ -6,6 +6,7 @@ __pycache__/
 .Python
 env/
 venv/
+.venv/
 ENV/
 build/
 develop-eggs/
@@ -37,6 +38,7 @@ wheels/
 
 # Project-specific
 device-client/data/
+native-client/data/
 tokens.json
 *.log
 .pytest_cache/
